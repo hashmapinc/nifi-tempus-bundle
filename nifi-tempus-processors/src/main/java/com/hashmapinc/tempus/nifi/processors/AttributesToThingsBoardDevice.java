@@ -1,5 +1,6 @@
 package com.hashmapinc.tempus.nifi.processors;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.nifi.annotation.behavior.*;
 import org.apache.nifi.annotation.documentation.CapabilityDescription;
 import org.apache.nifi.annotation.documentation.Tags;
@@ -72,6 +73,8 @@ public class AttributesToThingsBoardDevice extends AbstractProcessor {
 
         final Set<Relationship> relationships = new HashSet<Relationship>();
         relationships.add(SUCCESS);
+        relationships.add(FAILURE);
+
         this.relationships = Collections.unmodifiableSet(relationships);
     }
 
@@ -101,7 +104,6 @@ public class AttributesToThingsBoardDevice extends AbstractProcessor {
             log.error("Flow file is null");
             return;
         }
-        // TODO implement
 
         // Get the properties
         String deviceNameProperty = context.getProperty(DEVICE_NAME).evaluateAttributeExpressions(flowFile).getValue().replaceAll("[;\\s\t]", "");
@@ -133,9 +135,15 @@ public class AttributesToThingsBoardDevice extends AbstractProcessor {
                 rootNode.putPOJO(deviceName,attrNode);
             });
 
-            final String outData = rootNode.toString();
-            flowFile = session.write(flowFile, out -> out.write(outData.getBytes()));
-            session.transfer(flowFile, SUCCESS);
+            try {
+
+                final String outData = mapper.writeValueAsString(rootNode);
+                flowFile = session.write(flowFile, out -> out.write(outData.getBytes()));
+                session.transfer(flowFile, SUCCESS);
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
+                session.transfer(flowFile, FAILURE);
+            }
 
         }else{
 
@@ -143,7 +151,6 @@ public class AttributesToThingsBoardDevice extends AbstractProcessor {
             session.transfer(flowFile, FAILURE);
 
         }
-
 
 
     }
