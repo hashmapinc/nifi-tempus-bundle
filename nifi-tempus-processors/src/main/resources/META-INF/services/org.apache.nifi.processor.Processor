@@ -13,6 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 com.hashmapinc.tempus.nifi.processors.CalculateCRC
-com.hashmapinc.tempus.nifi.processors.AttributesToThingsBoardDevice
-com.hashmapinc.tempus.nifi.processors.TelemetryToThingsBoardDevice
+com.hashmapinc.tempus.nifi.processors.AttributesToTempus
+com.hashmapinc.tempus.nifi.processors.TelemetryToTempus
 

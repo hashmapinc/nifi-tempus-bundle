@@ -29,12 +29,12 @@ import java.util.stream.Collectors;
  *
  */
 
-@Tags({"Json","ThingsBoard", "Telemetry"})
+@Tags({"Tempus", "Json", "Telemetry"})
 @CapabilityDescription("Read a Json file and convert to ThingsBoard Device Telemetry Json format.")
 @ReadsAttributes({@ReadsAttribute(attribute="", description="")})
 @WritesAttributes({@WritesAttribute(attribute="", description="")})
 @InputRequirement(InputRequirement.Requirement.INPUT_REQUIRED)
-public class TelemetryToThingsBoardDevice extends AbstractProcessor {
+public class TelemetryToTempus extends AbstractProcessor {
 
     private static ObjectMapper mapper = new ObjectMapper();
 
@@ -150,7 +150,7 @@ public class TelemetryToThingsBoardDevice extends AbstractProcessor {
         String valueFieldName = context.getProperty(VALUE_FIELD).evaluateAttributeExpressions(flowFile).getValue().replaceAll("[;\\s\t]", "");
 
         String deviceName = flowFile.getAttribute(deviceNameProperty);
-        String flowFileContents = null;
+      //  String flowFileContents = null;
         JsonNode jsonRequest = null;
         String timeDepthValue = null;
         String indexValue = null;
@@ -159,10 +159,10 @@ public class TelemetryToThingsBoardDevice extends AbstractProcessor {
 
             InputStream inputStream = session.read(flowFile);
             try(BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream))){
-                flowFileContents = bufferedReader.lines().collect(Collectors.joining("\n"));
-                jsonRequest = mapper.readTree(flowFileContents);
-                timeDepthValue = jsonRequest.get(sourceFieldName).textValue();//logObject.getIndex();
-                indexValue = jsonRequest.get(valueFieldName).textValue();
+               // flowFileContents = bufferedReader.lines().collect(Collectors.joining("\n"));
+               // jsonRequest = mapper.readTree(flowFileContents);
+                timeDepthValue = flowFile.getAttribute(sourceFieldName);//jsonRequest.get(sourceFieldName).textValue();//logObject.getIndex();
+                indexValue = flowFile.getAttribute(valueFieldName);//jsonRequest.get(valueFieldName).textValue();
 
             }catch(IOException ex){
                 log.error("Error reading flow file contents "+ex.getMessage());

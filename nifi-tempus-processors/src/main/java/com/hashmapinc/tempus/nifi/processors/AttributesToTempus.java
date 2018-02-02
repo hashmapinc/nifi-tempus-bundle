@@ -22,12 +22,12 @@ import java.util.*;
  *
  */
 
-@Tags({"Json","ThingsBoard", "Attributes"})
+@Tags({"Tempus","Json", "Attributes"})
 @CapabilityDescription("Read a Json file and convert to ThingsBoard Device Attributes Json format.")
 @ReadsAttributes({@ReadsAttribute(attribute="", description="")})
 @WritesAttributes({@WritesAttribute(attribute="", description="")})
 @InputRequirement(InputRequirement.Requirement.INPUT_REQUIRED)
-public class AttributesToThingsBoardDevice extends AbstractProcessor {
+public class AttributesToTempus extends AbstractProcessor {
 
 
 
