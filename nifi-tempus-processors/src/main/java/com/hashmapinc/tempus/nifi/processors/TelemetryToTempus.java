@@ -16,6 +16,7 @@ import org.apache.nifi.logging.ComponentLog;
 import org.apache.nifi.processor.*;
 import org.apache.nifi.processor.exception.ProcessException;
 import org.apache.nifi.processor.util.StandardValidators;
+import org.apache.nifi.util.StringUtils;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -184,8 +185,13 @@ public class TelemetryToTempus extends AbstractProcessor {
             while(attributeTokenizer.hasMoreTokens()){
                 String attributeName = attributeTokenizer.nextToken();
                 try{
-                    String jsonValue = jsonRequest.get(attributeName).textValue();
-                    valueFiledBuffer.append(jsonValue);
+                    String attributeVale = flowFile.getAttribute(attributeName);//jsonRequest.get(attributeName).textValue();
+                    if(attributeVale == null || attributeVale.isEmpty()){
+                        valueFiledBuffer.append(attributeName);
+                    }else{
+                        valueFiledBuffer.append(attributeVale);
+                    }
+
                 }catch(NullPointerException exp){
                     log.info("Can not retrieve the values for attribute "+attributeName + " -> ");
                     valueFiledBuffer.append(attributeName);
