@@ -26,6 +26,7 @@ public class NifiJsonUtil {
             date = formatter.parse(logTime);
             longTime = date.getTime();
         } catch (ParseException e) {
+            try {longTime=Long.parseLong(logTime);} catch (Exception ex) {}
             e.printStackTrace();
         }
         return longTime;
