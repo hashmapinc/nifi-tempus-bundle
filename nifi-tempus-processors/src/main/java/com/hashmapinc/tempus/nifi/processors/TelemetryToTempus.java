@@ -43,6 +43,7 @@ public class TelemetryToTempus extends AbstractProcessor {
             .Builder().name("Device Name")
             .displayName("Device Name")
             .description("This property will direct the processor to output the Thingsboard Device name.")
+            .defaultValue("nameWell")
             .required(true)
             .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
             .build();

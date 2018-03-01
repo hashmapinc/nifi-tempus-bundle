@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
  */
 
 @Tags({"Tempus", "Json", "Telemetry", "Log"})
-@CapabilityDescription("Read a WITSML log object and convert to ThingsBoard Device Telemetry Json format.")
+@CapabilityDescription("Read a WITSML log object and convert to Tempus Device Telemetry Json format.")
 @ReadsAttributes({@ReadsAttribute(attribute="", description="")})
 @WritesAttributes({@WritesAttribute(attribute="", description="")})
 @InputRequirement(InputRequirement.Requirement.INPUT_REQUIRED)
@@ -41,7 +41,7 @@ public class LogToTempus extends AbstractProcessor {
     public static final PropertyDescriptor DEVICE_NAME = new PropertyDescriptor
             .Builder().name("Device Name")
             .displayName("Device Name")
-            .description("This property will direct the processor to output the Thingsboard Device name.")
+            .description("This property will direct the processor to output the Tempus Device name.")
             .required(true)
             .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
             .build();
@@ -57,7 +57,7 @@ public class LogToTempus extends AbstractProcessor {
     public static final PropertyDescriptor LOG_TYPE = new PropertyDescriptor
             .Builder().name("Log Type")
             .displayName("Log Type")
-            .description("This property will direct the processor to output the Thingsboard Telemetry for Time or Depth data.")
+            .description("This property will direct the processor to output the Tempus Telemetry for Time or Depth data.")
             .required(true)
             .allowableValues("ts","ds")
             .defaultValue("ts")
@@ -67,7 +67,7 @@ public class LogToTempus extends AbstractProcessor {
     public static final PropertyDescriptor LOG_SOURCEFIELD = new PropertyDescriptor
             .Builder().name("Log Source Fieldname")
             .displayName("Log Source Fieldname")
-            .description("This property will direct the processor to output the Thingsboard Telemetry for Time or Depth data.")
+            .description("This property will direct the processor to output the Tempus Telemetry for Time or Depth data.")
             .required(true)
             .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
             .build();

@@ -16,5 +16,6 @@ com.hashmapinc.tempus.nifi.processors.CalculateCRC
 com.hashmapinc.tempus.nifi.processors.AttributesToTempus
 com.hashmapinc.tempus.nifi.processors.TelemetryToTempus
 com.hashmapinc.tempus.nifi.processors.LogToTempus
+com.hashmapinc.tempus.nifi.processors.TrajectoryToTempus
 
 
