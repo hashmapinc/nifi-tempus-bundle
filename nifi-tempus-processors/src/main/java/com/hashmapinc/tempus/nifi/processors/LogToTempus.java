@@ -162,10 +162,18 @@ public class LogToTempus extends AbstractProcessor {
 
             mnemonicValueList = getFieldList(json, logSourceField);
             for (String mnemonic : mnemonicValueList) {
-                if (isMessage)
+                if (isMessage) {
                     kvData.put(logNameProperty, json.get(mnemonic).textValue());
-                else
-                    kvData.put(mnemonic+"@"+logName, json.get(mnemonic).textValue());
+                }
+                else {
+                    try {
+                        String dataValue = json.get(mnemonic).textValue();
+                        Double dblValue=Double.valueOf(dataValue);
+                        kvData.put(mnemonic + "@" + logName, dblValue);
+                    } catch (Exception ex) {
+                        kvData.put(mnemonic + "@" + logName, json.get(mnemonic).textValue());
+                    }
+                }
             }
             logInstance.put("values", kvData);
             String outData="";
