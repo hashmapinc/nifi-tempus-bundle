@@ -14,6 +14,7 @@ import org.apache.nifi.processor.util.StandardValidators;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.apache.nifi.util.StringUtils;
 
 import java.util.*;
 
@@ -117,6 +118,7 @@ public class AttributesToTempus extends AbstractProcessor {
         while(attributeTokenizer.hasMoreTokens()){
             String attributeName = attributeTokenizer.nextToken();
             String attributeValue = flowFile.getAttribute(attributeName);
+            if(!StringUtils.isEmpty(attributeValue))
             attributeKeyValue.put(attributeName,attributeValue);
         }
 
