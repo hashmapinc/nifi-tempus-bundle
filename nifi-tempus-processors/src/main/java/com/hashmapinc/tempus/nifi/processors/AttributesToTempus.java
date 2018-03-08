@@ -24,7 +24,7 @@ import java.util.*;
  */
 
 @Tags({"Tempus","Json", "Attributes"})
-@CapabilityDescription("Read a Json file and convert to ThingsBoard Device Attributes Json format.")
+@CapabilityDescription("Read a Json file and convert to Tempus Device Attributes Json format.")
 @ReadsAttributes({@ReadsAttribute(attribute="", description="")})
 @WritesAttributes({@WritesAttribute(attribute="", description="")})
 @InputRequirement(InputRequirement.Requirement.INPUT_REQUIRED)
@@ -37,7 +37,7 @@ public class AttributesToTempus extends AbstractProcessor {
     public static final PropertyDescriptor DEVICE_NAME = new PropertyDescriptor
             .Builder().name("Device Name")
             .displayName("Device Name")
-            .description("This property will direct the processor to output the Thingsboard Device name.")
+            .description("This property will direct the processor to output the Tempus Device name.")
             .defaultValue("nameWell")
             .required(true)
             .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
@@ -46,9 +46,17 @@ public class AttributesToTempus extends AbstractProcessor {
     public static final PropertyDescriptor ATTRIBUTES = new PropertyDescriptor
             .Builder().name("Attributes")
             .displayName("Attributes")
-            .description("This property will direct the processor to output the Thingsboard attributes. " +
+            .description("This property will direct the processor to output the Tempus attributes. " +
                     "This will be comma separated values and must be part of the attribute list as input. eg: nameWell,nameWellbore,nameRig")
-            .required(true)
+            .required(false)
+            .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
+            .build();
+
+    public static final PropertyDescriptor DEVICE_TYPE = new PropertyDescriptor
+            .Builder().name("Device Type")
+            .displayName("Device Type")
+            .description("This property will be used to display device type on Tempus UI and should be used only when publishing to \"connect\" topic.")
+            .required(false)
             .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
             .build();
 
@@ -71,6 +79,7 @@ public class AttributesToTempus extends AbstractProcessor {
         final List<PropertyDescriptor> descriptors = new ArrayList<PropertyDescriptor>();
         descriptors.add(DEVICE_NAME);
         descriptors.add(ATTRIBUTES);
+        descriptors.add(DEVICE_TYPE);
         this.descriptors = Collections.unmodifiableList(descriptors);
 
         final Set<Relationship> relationships = new HashSet<Relationship>();
@@ -108,23 +117,32 @@ public class AttributesToTempus extends AbstractProcessor {
         }
 
         // Get the properties
-        String deviceNameProperty = context.getProperty(DEVICE_NAME).evaluateAttributeExpressions(flowFile).getValue().replaceAll("[;\\s\t]", "");
-        String attributeList = context.getProperty(ATTRIBUTES).evaluateAttributeExpressions(flowFile).getValue().replaceAll("[;\\s\t]", "");
-
-        StringTokenizer attributeTokenizer = new StringTokenizer(attributeList,",");
+        String deviceNameProperty = context.getProperty(DEVICE_NAME).evaluateAttributeExpressions(flowFile).getValue();
+        if(!StringUtils.isEmpty(deviceNameProperty)){
+            deviceNameProperty.replaceAll("[;\\s\t]", "");
+        }
+        String attributeList = context.getProperty(ATTRIBUTES).evaluateAttributeExpressions(flowFile).getValue();
 
         Map<String,String> attributeKeyValue = new HashMap<>();
-
-        while(attributeTokenizer.hasMoreTokens()){
-            String attributeName = attributeTokenizer.nextToken();
-            String attributeValue = flowFile.getAttribute(attributeName);
-            if(!StringUtils.isEmpty(attributeValue))
-            attributeKeyValue.put(attributeName,attributeValue);
+        if(!StringUtils.isEmpty(attributeList)){
+            attributeList.replaceAll("[;\\s\t]", "");
+            StringTokenizer attributeTokenizer = new StringTokenizer(attributeList,",");
+            while(attributeTokenizer.hasMoreTokens()){
+                String attributeName = attributeTokenizer.nextToken();
+                String attributeValue = flowFile.getAttribute(attributeName);
+                if(!StringUtils.isEmpty(attributeValue))
+                    attributeKeyValue.put(attributeName,attributeValue);
+            }
         }
 
+        String deviceTypeProperty = context.getProperty(DEVICE_TYPE).evaluateAttributeExpressions(flowFile).getValue();
+
+        if(!StringUtils.isEmpty(deviceTypeProperty)){
+            deviceTypeProperty.replaceAll("[;\\s\t]", "");
+        }
 
         String deviceName = flowFile.getAttribute(deviceNameProperty);
-        if(deviceName != null || !"".equals(deviceName)){
+        if(!StringUtils.isEmpty(deviceName) && !StringUtils.isEmpty(attributeList) && StringUtils.isEmpty(deviceTypeProperty)){
             ObjectNode attributeNodes = mapper.createObjectNode();
             List<ObjectNode> attributeNodeList = new ArrayList<>();
             attributeKeyValue.forEach((attributeName,attributeValue) ->{
@@ -148,7 +166,23 @@ public class AttributesToTempus extends AbstractProcessor {
                 session.transfer(flowFile, FAILURE);
             }
 
-        }else{
+        }else if(!StringUtils.isEmpty(deviceName) && !StringUtils.isEmpty(deviceTypeProperty) && StringUtils.isEmpty(attributeList)){
+
+            ObjectNode connectNode = mapper.createObjectNode();
+            connectNode.put("device",deviceName);
+            connectNode.put("type",deviceTypeProperty);
+            try {
+                final String outData = mapper.writeValueAsString(connectNode);
+                flowFile = session.write(flowFile, out -> out.write(outData.getBytes()));
+                session.transfer(flowFile, SUCCESS);
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
+                session.transfer(flowFile, FAILURE);
+            }
+
+        }
+
+        else{
 
             log.error("Please correct Device Name. It should be part of input attributes: "+deviceName);
             session.transfer(flowFile, FAILURE);
