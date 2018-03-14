@@ -174,7 +174,6 @@ public class OpcToTempusAttributes extends AbstractProcessor {
                     break;
                 }
             }
-            ((ObjectNode) jsonValue).put("channelId", key);
             ((ObjectNode) jsonNode).set(key, jsonValue);
         }
         return jsonNode;
@@ -183,7 +182,6 @@ public class OpcToTempusAttributes extends AbstractProcessor {
     private JsonNode transformOpcDataToDeviceAttributes(String[]  nodesData) {
         JsonNode jsonNode = mapper.createObjectNode();
         String key = extractKey(nodesData[0]);
-        ((ObjectNode) jsonNode).put("channelId", key);
         for (int i = 0; i < nodesData.length; i++) {
             String value = extractValue(nodesData[i]);
             ((ObjectNode) jsonNode).put(value, false);
