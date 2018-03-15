@@ -199,6 +199,9 @@ public class OpcToTempusAttributes extends AbstractProcessor {
             if (nodes.length < recursiveDepth) {
                 continue;
             }
+            if (nodes[nodes.length - 1].startsWith("_")) {
+                continue;
+            }
             opcuaData.append(opcuaListData.get(i) + System.getProperty("line.separator"));
         }
         return opcuaData;
