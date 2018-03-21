@@ -119,7 +119,9 @@ public class OpcToTempusAttributes extends AbstractProcessor {
         });
 
         int recursiveDepth = Integer.parseInt(flowFile.getAttribute("recursiveDepth"));
-        StringBuilder opcuaData = removeUnnecessaryOpcData(opcuaListData.get(), recursiveDepth);
+        String startingNode = flowFile.getAttribute("startNode");
+
+        StringBuilder opcuaData = removeUnnecessaryOpcData(opcuaListData.get(), recursiveDepth, startingNode);
 
         if (opcuaData.length() == 0) {
             logger.error("No useful data extracted");
@@ -189,14 +191,16 @@ public class OpcToTempusAttributes extends AbstractProcessor {
         return jsonNode;
     }
 
-    private StringBuilder removeUnnecessaryOpcData(List<String> opcuaListData, int recursiveDepth) {
+    private StringBuilder removeUnnecessaryOpcData(List<String> opcuaListData, int recursiveDepth, String startingNode) {
         StringBuilder opcuaData = new StringBuilder();
         for (int i = 0; i < opcuaListData.size(); i++) {
             if (opcuaListData.get(i).contains("nsu")) {
                 continue;
             }
             String nodes[] = opcuaListData.get(i).split("\\.");
-            if (nodes.length < recursiveDepth) {
+            if (startingNode != null && nodes.length - 2 < recursiveDepth) {
+                continue;
+            } else if (nodes.length < recursiveDepth) {
                 continue;
             }
             if (nodes[nodes.length - 1].startsWith("_")) {
