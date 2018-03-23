@@ -121,35 +121,36 @@ public class OpcToTempusAttributes extends AbstractProcessor {
         int recursiveDepth = Integer.parseInt(flowFile.getAttribute("recursiveDepth"));
         String startingNode = flowFile.getAttribute("startNode");
 
-        StringBuilder opcuaData = removeUnnecessaryOpcData(opcuaListData.get(), recursiveDepth, startingNode);
+        StringBuilder opcuaData = removeUnnecessaryOpcData(opcuaListData.get(), recursiveDepth);
 
         if (opcuaData.length() == 0) {
             logger.error("No useful data extracted");
-            return;
-        }
-
-        String nodesData[] = opcuaData.toString().split("\\r?\\n");
-        JsonNode jsonNode = null;
-
-        if (context.getProperty(ATTRIBUTE_JSON_FORMAT).getValue().equals("Gateway Json")) {
-            jsonNode = transformOpcDataToGatewayAttributes(nodesData);
+            session.transfer(flowFile, FAILURE);
         } else {
-            jsonNode = transformOpcDataToDeviceAttributes(nodesData);
-        }
 
-        if (jsonNode != null) {
-            try {
-                final String outData = mapper.writeValueAsString(jsonNode);
-                session.putAttribute(flowFile, "mime.type", "application/json");
-                flowFile = session.write(flowFile, out -> out.write(outData.getBytes()));
-                session.transfer(flowFile, SUCCESS);
-            } catch (JsonProcessingException e) {
-                e.printStackTrace();
+            String nodesData[] = opcuaData.toString().split("\\r?\\n");
+            JsonNode jsonNode = null;
+
+            if (context.getProperty(ATTRIBUTE_JSON_FORMAT).getValue().equals("Gateway Json")) {
+                jsonNode = transformOpcDataToGatewayAttributes(nodesData);
+            } else {
+                jsonNode = transformOpcDataToDeviceAttributes(nodesData);
+            }
+
+            if (jsonNode != null) {
+                try {
+                    final String outData = mapper.writeValueAsString(jsonNode);
+                    session.putAttribute(flowFile, "mime.type", "application/json");
+                    flowFile = session.write(flowFile, out -> out.write(outData.getBytes()));
+                    session.transfer(flowFile, SUCCESS);
+                } catch (JsonProcessingException e) {
+                    e.printStackTrace();
+                    session.transfer(flowFile, FAILURE);
+                }
+            } else {
+                logger.error("OPCUA data generated is null");
                 session.transfer(flowFile, FAILURE);
             }
-        } else {
-            logger.error("OPCUA data generated is null");
-            session.transfer(flowFile, FAILURE);
         }
     }
 
@@ -191,16 +192,14 @@ public class OpcToTempusAttributes extends AbstractProcessor {
         return jsonNode;
     }
 
-    private StringBuilder removeUnnecessaryOpcData(List<String> opcuaListData, int recursiveDepth, String startingNode) {
+    private StringBuilder removeUnnecessaryOpcData(List<String> opcuaListData, int recursiveDepth) {
         StringBuilder opcuaData = new StringBuilder();
         for (int i = 0; i < opcuaListData.size(); i++) {
             if (opcuaListData.get(i).contains("nsu")) {
                 continue;
             }
             String nodes[] = opcuaListData.get(i).split("\\.");
-            if (startingNode != null && nodes.length - 2 < recursiveDepth) {
-                continue;
-            } else if (nodes.length < recursiveDepth) {
+            if (nodes.length < recursiveDepth) {
                 continue;
             }
             if (nodes[nodes.length - 1].startsWith("_")) {
