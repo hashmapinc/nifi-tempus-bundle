@@ -17,5 +17,6 @@ com.hashmapinc.tempus.nifi.processors.AttributesToTempus
 com.hashmapinc.tempus.nifi.processors.TelemetryToTempus
 com.hashmapinc.tempus.nifi.processors.LogToTempus
 com.hashmapinc.tempus.nifi.processors.TrajectoryToTempus
-
+com.hashmapinc.tempus.nifi.processors.OpcToTempusAttributes
+com.hashmapinc.tempus.nifi.processors.TempusToNodeList
 
