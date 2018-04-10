@@ -59,7 +59,7 @@ public class LogToTempus extends AbstractProcessor {
             .displayName("Log Type")
             .description("This property will direct the processor to output the Tempus Telemetry for Time or Depth data.")
             .required(true)
-            .allowableValues("ts","ds")
+            .allowableValues("ts","ds", "attribute")
             .defaultValue("ts")
             .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
             .build();
@@ -137,6 +137,7 @@ public class LogToTempus extends AbstractProcessor {
         String logSourceField = context.getProperty(LOG_SOURCEFIELD).evaluateAttributeExpressions(flowFile).getValue().replaceAll("[;\\s\t]", "");
 
         String deviceName = flowFile.getAttribute(deviceNameProperty);
+
         boolean isMessage=false;
         if (wmlObjectType.equalsIgnoreCase("message")) {
             isMessage = true;
@@ -146,36 +147,52 @@ public class LogToTempus extends AbstractProcessor {
         }
         String logName = flowFile.getAttribute(logNameProperty);
         String[] mnemonicValueList = null;
-        String[] values = null;
+        String wellId = flowFile.getAttribute("uidWell");
+        String wellBoreId = flowFile.getAttribute("uidWellbore");
+        String logId = flowFile.getAttribute("uid");
+
+        String url = wellId + "/" + wellBoreId + "/" + logId;
 
         if(deviceName != null || !deviceName.isEmpty()){
             ObjectNode logResponse = mapper.createObjectNode();
-            ArrayNode logData = logResponse.putArray(deviceName);
-            ObjectNode logInstance = logData.addObject();
-            JsonNode json=getJsonObject(session, flowFile);
-            if(NifiJsonUtil.TS_FIELDNAME.equalsIgnoreCase(logType)){
-                logInstance.put(logType,String.valueOf(NifiJsonUtil.changeTimeToLong(json.get(logSourceField).textValue())));
-            } else {
-                logInstance.put(logType,String.valueOf(json.get(logSourceField).textValue()));
-            }
-            ObjectNode kvData=mapper.createObjectNode();
+            ObjectNode kvData = mapper.createObjectNode();
+            if (NifiJsonUtil.ATTRIBUTE_FIELDNAME.equalsIgnoreCase(logType)) {
+                String mnemonics = flowFile.getAttribute("mnemonicList");
+                mnemonics = mnemonics.replaceAll("\"", "");
+                mnemonics = mnemonics.replace("[", "");
+                mnemonics = mnemonics.replace("]", "");
 
-            mnemonicValueList = getFieldList(json, logSourceField);
-            for (String mnemonic : mnemonicValueList) {
-                if (isMessage) {
-                    kvData.put(logNameProperty, json.get(mnemonic).textValue());
+                List<String> mnemonicsList = Arrays.asList(mnemonics.split(","));
+                for (String mnemonic : mnemonicsList) {
+                    kvData.put(url + "@"+ mnemonic, false);
                 }
-                else {
-                    try {
-                        String dataValue = json.get(mnemonic).textValue();
-                        Double dblValue=Double.valueOf(dataValue);
-                        kvData.put(mnemonic + "@" + logName, dblValue);
-                    } catch (Exception ex) {
-                        kvData.put(mnemonic + "@" + logName, json.get(mnemonic).textValue());
+                logResponse.put(deviceName, kvData);
+            } else {
+                ArrayNode logData = logResponse.putArray(deviceName);
+                ObjectNode logInstance = logData.addObject();
+                JsonNode json = getJsonObject(session, flowFile);
+                if (NifiJsonUtil.TS_FIELDNAME.equalsIgnoreCase(logType)) {
+                    logInstance.put(logType, String.valueOf(NifiJsonUtil.changeTimeToLong(json.get(logSourceField).textValue())));
+                } else {
+                    logInstance.put(logType, String.valueOf(json.get(logSourceField).textValue()));
+                }
+
+                mnemonicValueList = getFieldList(json, logSourceField);
+                for (String mnemonic : mnemonicValueList) {
+                    if (isMessage) {
+                        kvData.put(logNameProperty, json.get(mnemonic).textValue());
+                    } else {
+                        try {
+                            String dataValue = json.get(mnemonic).textValue();
+                            Double dblValue = Double.valueOf(dataValue);
+                            kvData.put(mnemonic + "@" + logName, dblValue);
+                        } catch (Exception ex) {
+                            kvData.put(mnemonic + "@" + logName, json.get(mnemonic).textValue());
+                        }
                     }
                 }
+                logInstance.put("values", kvData);
             }
-            logInstance.put("values", kvData);
             String outData="";
             try {
                 outData = mapper.writeValueAsString(logResponse);

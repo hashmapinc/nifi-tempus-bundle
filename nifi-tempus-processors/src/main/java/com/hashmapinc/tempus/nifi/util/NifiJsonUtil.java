@@ -19,6 +19,7 @@ public class NifiJsonUtil {
 
     public static final String TS_FIELDNAME = "ts";
     public static final String DS_FIELDNAME = "ds";
+    public static final String ATTRIBUTE_FIELDNAME = "attribute";
 
     public static final String KEY_CONSTRUCT_DELIMETER = ",";
 
